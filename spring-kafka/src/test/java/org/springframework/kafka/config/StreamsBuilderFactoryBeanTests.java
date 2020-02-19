@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -99,6 +100,23 @@ public class StreamsBuilderFactoryBeanTests {
 		streamsBuilderFactoryBean.start();
 		StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
 		verify(streamsBuilder).build(kafkaStreamsConfiguration.asProperties());
+	}
+
+	@Test
+	public void testBuildWithStreamsBuilderCustomizer() {
+		final AtomicBoolean builderConfigured = new AtomicBoolean();
+
+		streamsBuilderFactoryBean = new StreamsBuilderFactoryBean(kafkaStreamsConfiguration);
+		streamsBuilderFactoryBean.setInfrastructureCustomizer(new KafkaStreamsInfrastructureCustomizer() {
+			@Override
+			public void configureBuilder(StreamsBuilder builder) {
+				builderConfigured.set(true);
+			}
+		});
+
+		streamsBuilderFactoryBean.createInstance();
+
+		assertThat(builderConfigured).isTrue();
 	}
 
 	@Configuration
